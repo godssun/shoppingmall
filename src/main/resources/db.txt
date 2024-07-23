@@ -1,0 +1,242 @@
+사용자 정보를 저장하는 테이블. 여기에는 구매자와 판매자 모두 포함.
+
+CREATE TABLE User (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    address TEXT,
+    gender ENUM('male', 'female', 'other') NOT NULL, -- 성별 필드 추가
+    role ENUM('buyer', 'seller') DEFAULT 'buyer',
+    status ENUM('active', 'inactive', 'banned') DEFAULT 'active', -- 상태 필드 추가
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+	•	id (PRIMARY KEY): 각 사용자의 고유 ID.
+	•	email: 사용자의 이메일 주소, 고유.
+	•	password: 사용자의 비밀번호.
+	•	name: 사용자의 이름.
+	•	phone: 사용자의 전화번호.
+	•	address: 사용자의 주소.
+	•	role: 사용자의 역할(구매자 또는 판매자).
+	•	created_at: 레코드 생성 시간.
+	•	updated_at: 레코드 업데이트 시간.
+
+===================================================================================================
+
+판매자가 등록한 상품 정보를 저장하는 테이블.
+
+CREATE TABLE Product (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    seller_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    stock INT NOT NULL,
+    views INT DEFAULT 0, -- 조회수
+    sales INT DEFAULT 0, -- 구매수
+    end_date DATE NOT NULL, -- 판매 종료일
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (seller_id) REFERENCES User(id)
+);
+
+	•	id (PRIMARY KEY): 각 상품의 고유 ID.
+	•	seller_id (FOREIGN KEY): 상품을 등록한 판매자의 ID.
+	•	name: 상품 이름.
+	•	description: 상품 설명.
+	•	price: 상품 가격.
+	•	stock: 재고 수량.
+	•	views: 조회수.
+	•	sales: 구매수.
+	•	end_date: 판매 종료일.
+	•	created_at: 레코드 생성 시간.
+	•	updated_at: 레코드 업데이트 시간.
+
+===================================================================================================
+
+상품의 다양한 옵션을 저장하는 테이블.
+
+CREATE TABLE ProductOption (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    additional_price DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES Product(id)
+);
+
+	•	id (PRIMARY KEY): 각 옵션의 고유 ID.
+	•	product_id (FOREIGN KEY): 관련 상품의 ID.
+	•	name: 옵션 이름.
+	•	additional_price: 옵션 추가 가격.
+	•	created_at: 레코드 생성 시간.
+	•	updated_at: 레코드 업데이트 시간.
+
+===================================================================================================
+
+사용자의 장바구니 정보를 저장하는 테이블.
+
+CREATE TABLE Cart (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id)
+);
+
+	•	id (PRIMARY KEY): 각 장바구니의 고유 ID.
+	•	user_id (FOREIGN KEY): 장바구니 소유자의 ID.
+	•	created_at: 레코드 생성 시간.
+	•	updated_at: 레코드 업데이트 시간.
+
+===================================================================================================
+
+장바구니 항목과 관련된 상품 및 옵션 정보를 저장하는 테이블.
+
+CREATE TABLE CartItem (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    cart_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    product_option_id BIGINT NOT NULL,
+    quantity INT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    option_price DECIMAL(10, 2) DEFAULT 0,
+    total_price DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (cart_id) REFERENCES Cart(id),
+    FOREIGN KEY (product_id) REFERENCES Product(id),
+    FOREIGN KEY (product_option_id) REFERENCES ProductOption(id)
+);
+
+	•	id (PRIMARY KEY): 각 장바구니 항목의 고유 ID.
+	•	cart_id (FOREIGN KEY): 관련된 장바구니의 ID.
+	•	product_id (FOREIGN KEY): 장바구니에 담긴 상품의 ID.
+	•	product_option_id (FOREIGN KEY): 장바구니에 담긴 상품의 옵션 ID.
+	•	quantity: 장바구니에 담긴 상품의 수량.
+	•	price: 장바구니에 담긴 상품의 기본 가격.
+	•	option_price: 옵션 추가 가격. 기본값 0.
+	•	total_price: 옵션을 포함한 장바구니 항목의 총 가격.
+	•	created_at: 레코드 생성 시간.
+	•	updated_at: 레코드 업데이트 시간.
+
+===================================================================================================
+
+사용자의 주문 정보를 저장하는 테이블.
+
+CREATE TABLE Order (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    total_price DECIMAL(10, 2) NOT NULL,
+    status ENUM('pending', 'paid', 'shipped', 'delivered') DEFAULT 'pending',
+    shipping_address TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id)
+);
+
+	•	id (PRIMARY KEY): 각 주문의 고유 ID.
+	•	user_id (FOREIGN KEY): 주문한 사용자의 ID.
+	•	total_price: 주문 총액.
+	•	status: 주문 상태(예: pending, paid, shipped, delivered).
+	•	shipping_address: 배송 주소.
+	•	created_at: 레코드 생성 시간.
+	•	updated_at: 레코드 업데이트 시간.
+
+===================================================================================================
+
+주문 항목과 관련된 상품 및 옵션 정보를 저장하는 테이블.
+
+CREATE TABLE OrderItem (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    product_option_id BIGINT NOT NULL,
+    quantity INT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    option_price DECIMAL(10, 2) DEFAULT 0,
+    total_price DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES `Order`(id),
+    FOREIGN KEY (product_id) REFERENCES Product(id),
+    FOREIGN KEY (product_option_id) REFERENCES ProductOption(id)
+);
+
+	•	id (PRIMARY KEY): 각 주문 항목의 고유 ID.
+	•	order_id (FOREIGN KEY): 관련된 주문의 ID.
+	•	product_id (FOREIGN KEY): 주문한 상품의 ID.
+	•	product_option_id (FOREIGN KEY): 주문한 상품의 옵션 ID.
+	•	quantity: 주문한 상품의 수량.
+	•	price: 주문한 상품의 기본 가격.
+	•	option_price: 옵션 추가 가격. 기본값 0.
+	•	total_price: 옵션을 포함한 주문 항목의 총 가격.
+	•	created_at: 레코드 생성 시간.
+	•	updated_at: 레코드 업데이트 시간.
+
+===================================================================================================
+
+상품 이미지를 저장하는 테이블.
+
+CREATE TABLE ProductImage (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    image_url VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES Product(id)
+);
+
+	•	id: 이미지 ID (Primary Key)
+	•	product_id: 상품 ID (Foreign Key to Product.id)
+	•	image_url: 이미지 URL (Not Null)
+	•	created_at: 생성 시간 (Default: CURRENT_TIMESTAMP)
+	•	updated_at: 업데이트 시간 (Default: CURRENT_TIMESTAMP, ON UPDATE CURRENT_TIMESTAMP)
+
+===================================================================================================
+
+상품 카테고리 정보를 저장하는 테이블.
+
+CREATE TABLE ProductCategory (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+	•	id: 카테고리 ID (Primary Key)
+	•	name: 카테고리 이름 (Not Null)
+	•	created_at: 생성 시간 (Default: CURRENT_TIMESTAMP)
+	•	updated_at: 업데이트 시간 (Default: CURRENT_TIMESTAMP, ON UPDATE CURRENT_TIMESTAMP)
+
+===================================================================================================
+
+상품과 카테고리 간의 다대다 관계를 관리하는 연결 테이블.
+
+CREATE TABLE ProductCategory (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+	•	product_id: 상품 ID (Foreign Key to Product.id)
+	•	category_id: 카테고리 ID (Foreign Key to ProductCategory.id)
+	•	created_at: 생성 시간 (Default: CURRENT_TIMESTAMP)
+	•	updated_at: 업데이트 시간 (Default: CURRENT_TIMESTAMP, ON UPDATE CURRENT_TIMESTAMP)
+
+===================================================================================================
+
+관계 요약
+
+	•	User와 Product는 1:N 관계입니다. 하나의 사용자가 여러 상품을 판매할 수 있습니다.
+	•	Product와 ProductOption은 1:N 관계입니다. 하나의 상품에 여러 옵션이 있을 수 있습니다.
+	•	Product와 ProductImage는 1:N 관계입니다. 하나의 상품에 여러 이미지가 있을 수 있습니다.
+	•	Product와 ProductCategory는 다대다(N:N) 관계입니다. 이를 위해 ProductCategoryMapping 테이블이 사용됩니다.
+	•	User와 Cart는 1:1 관계입니다. 하나의 사용자는 하나의 장바구니만 가질 수 있습니다.
+	•	Cart와 CartItem은 1:N 관계입니다. 하나의 장바구니에 여러 상품 항목이 있을 수 있습니다.
+	•	Order와 OrderItem은 1:N 관계입니다. 하나의 주문에 여러 상품 항목이 있을 수 있습니다.
